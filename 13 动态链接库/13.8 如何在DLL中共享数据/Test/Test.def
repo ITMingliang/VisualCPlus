@@ -1,0 +1,10 @@
+; Test.def : Declares the module parameters for the DLL.
+
+LIBRARY      "Test"
+DESCRIPTION  'Test Windows Dynamic Link Library'
+
+EXPORTS
+	GetCount
+
+SECTIONS
+	.SharedData SHARED

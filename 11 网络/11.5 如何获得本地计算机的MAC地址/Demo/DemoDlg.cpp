@@ -1,0 +1,260 @@
+// DemoDlg.cpp : implementation file
+//
+
+#include "stdafx.h"
+#include "Demo.h"
+#include "DemoDlg.h"
+
+#include "Iphlpapi.h"
+#include <Nb30.h>
+
+#ifdef _DEBUG
+#define new DEBUG_NEW
+#undef THIS_FILE
+static char THIS_FILE[] = __FILE__;
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+// CAboutDlg dialog used for App About
+
+class CAboutDlg : public CDialog
+{
+public:
+	CAboutDlg();
+
+// Dialog Data
+	//{{AFX_DATA(CAboutDlg)
+	enum { IDD = IDD_ABOUTBOX };
+	//}}AFX_DATA
+
+	// ClassWizard generated virtual function overrides
+	//{{AFX_VIRTUAL(CAboutDlg)
+	protected:
+	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
+	//}}AFX_VIRTUAL
+
+// Implementation
+protected:
+	//{{AFX_MSG(CAboutDlg)
+	//}}AFX_MSG
+	DECLARE_MESSAGE_MAP()
+};
+
+CAboutDlg::CAboutDlg() : CDialog(CAboutDlg::IDD)
+{
+	//{{AFX_DATA_INIT(CAboutDlg)
+	//}}AFX_DATA_INIT
+}
+
+void CAboutDlg::DoDataExchange(CDataExchange* pDX)
+{
+	CDialog::DoDataExchange(pDX);
+	//{{AFX_DATA_MAP(CAboutDlg)
+	//}}AFX_DATA_MAP
+}
+
+BEGIN_MESSAGE_MAP(CAboutDlg, CDialog)
+	//{{AFX_MSG_MAP(CAboutDlg)
+		// No message handlers
+	//}}AFX_MSG_MAP
+END_MESSAGE_MAP()
+
+/////////////////////////////////////////////////////////////////////////////
+// CDemoDlg dialog
+
+CDemoDlg::CDemoDlg(CWnd* pParent /*=NULL*/)
+	: CDialog(CDemoDlg::IDD, pParent)
+{
+	//{{AFX_DATA_INIT(CDemoDlg)
+		// NOTE: the ClassWizard will add member initialization here
+	//}}AFX_DATA_INIT
+	// Note that LoadIcon does not require a subsequent DestroyIcon in Win32
+	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+}
+
+void CDemoDlg::DoDataExchange(CDataExchange* pDX)
+{
+	CDialog::DoDataExchange(pDX);
+	//{{AFX_DATA_MAP(CDemoDlg)
+		// NOTE: the ClassWizard will add DDX and DDV calls here
+	//}}AFX_DATA_MAP
+}
+
+BEGIN_MESSAGE_MAP(CDemoDlg, CDialog)
+	//{{AFX_MSG_MAP(CDemoDlg)
+	ON_WM_SYSCOMMAND()
+	ON_WM_PAINT()
+	ON_WM_QUERYDRAGICON()
+	ON_BN_CLICKED(IDC_TEST1, OnTest1)
+	ON_BN_CLICKED(IDC_TEST2, OnTest2)
+	//}}AFX_MSG_MAP
+END_MESSAGE_MAP()
+
+/////////////////////////////////////////////////////////////////////////////
+// CDemoDlg message handlers
+
+BOOL CDemoDlg::OnInitDialog()
+{
+	CDialog::OnInitDialog();
+
+	// Add "About..." menu item to system menu.
+
+	// IDM_ABOUTBOX must be in the system command range.
+	ASSERT((IDM_ABOUTBOX & 0xFFF0) == IDM_ABOUTBOX);
+	ASSERT(IDM_ABOUTBOX < 0xF000);
+
+	CMenu* pSysMenu = GetSystemMenu(FALSE);
+	if (pSysMenu != NULL)
+	{
+		CString strAboutMenu;
+		strAboutMenu.LoadString(IDS_ABOUTBOX);
+		if (!strAboutMenu.IsEmpty())
+		{
+			pSysMenu->AppendMenu(MF_SEPARATOR);
+			pSysMenu->AppendMenu(MF_STRING, IDM_ABOUTBOX, strAboutMenu);
+		}
+	}
+
+	// Set the icon for this dialog.  The framework does this automatically
+	//  when the application's main window is not a dialog
+	SetIcon(m_hIcon, TRUE);			// Set big icon
+	SetIcon(m_hIcon, FALSE);		// Set small icon
+	
+	// TODO: Add extra initialization here
+	
+	return TRUE;  // return TRUE  unless you set the focus to a control
+}
+
+void CDemoDlg::OnSysCommand(UINT nID, LPARAM lParam)
+{
+	if ((nID & 0xFFF0) == IDM_ABOUTBOX)
+	{
+		CAboutDlg dlgAbout;
+		dlgAbout.DoModal();
+	}
+	else
+	{
+		CDialog::OnSysCommand(nID, lParam);
+	}
+}
+
+// If you add a minimize button to your dialog, you will need the code below
+//  to draw the icon.  For MFC applications using the document/view model,
+//  this is automatically done for you by the framework.
+
+void CDemoDlg::OnPaint() 
+{
+	if (IsIconic())
+	{
+		CPaintDC dc(this); // device context for painting
+
+		SendMessage(WM_ICONERASEBKGND, (WPARAM) dc.GetSafeHdc(), 0);
+
+		// Center icon in client rectangle
+		int cxIcon = GetSystemMetrics(SM_CXICON);
+		int cyIcon = GetSystemMetrics(SM_CYICON);
+		CRect rect;
+		GetClientRect(&rect);
+		int x = (rect.Width() - cxIcon + 1) / 2;
+		int y = (rect.Height() - cyIcon + 1) / 2;
+
+		// Draw the icon
+		dc.DrawIcon(x, y, m_hIcon);
+	}
+	else
+	{
+		CDialog::OnPaint();
+	}
+}
+
+// The system calls this to obtain the cursor to display while the user drags
+//  the minimized window.
+HCURSOR CDemoDlg::OnQueryDragIcon()
+{
+	return (HCURSOR) m_hIcon;
+}
+
+void CDemoDlg::OnTest1() 
+{
+	LANA_ENUM num;
+	ADAPTER_STATUS status;
+
+	NCB ncb;
+
+	//发送NCBENUM命令，获得网卡的数量和每个网卡的编号
+	ncb.ncb_command = NCBENUM;
+	ncb.ncb_buffer = (UCHAR*)&num;
+	ncb.ncb_length = sizeof(LANA_ENUM);
+	Netbios(&ncb);
+
+	CString strText =_T("本地计算机的MAC地址：\n");
+	for (int n = 0; n < num.length; n++)
+	{
+		//发送NCBRESET命令
+		memset(&ncb, 0, sizeof(NCB));
+		ncb.ncb_command = NCBRESET;
+		ncb.ncb_lana_num = num.lana[n];
+		Netbios(&ncb);
+
+		//发送NCBASTAT命令，获得每个网卡的状态
+		memset(&ncb, 0, sizeof(NCB));
+		ncb.ncb_command = NCBASTAT;
+		ncb.ncb_lana_num = num.lana[n];
+		memset(ncb.ncb_callname, '*', 1);
+		ncb.ncb_buffer = (UCHAR*)&status;
+		ncb.ncb_length = sizeof(ADAPTER_STATUS);
+		Netbios(&ncb);
+
+		//获得每个网卡的MAC地址
+		CString strTemp = _T("");
+		strTemp.Format("%02X-%02X-%02X-%02X-%02X-%02X\n", 
+			status.adapter_address[0],
+			status.adapter_address[1],
+			status.adapter_address[2],
+			status.adapter_address[3],
+			status.adapter_address[4],
+			status.adapter_address[5]);
+		strText += strTemp;
+	}
+	AfxMessageBox(strText);
+}
+
+void CDemoDlg::OnTest2() 
+{
+	//获得需要的缓冲区大小
+	DWORD nLength = 0;
+	if (GetAdaptersInfo(NULL, &nLength) != ERROR_BUFFER_OVERFLOW)
+	{
+		return;
+	}
+
+	IP_ADAPTER_INFO* pAdapterInfo = (IP_ADAPTER_INFO*)new BYTE[nLength];
+
+	//获得本地计算机网卡信息
+	if (GetAdaptersInfo(pAdapterInfo, &nLength) != ERROR_SUCCESS)
+	{
+		delete[] pAdapterInfo;
+		return;
+	}
+
+	//获得本地计算机MAC地址
+	CString strText =_T("本地计算机的MAC地址：\n");
+	IP_ADAPTER_INFO* pCurrentAdapterInfo = pAdapterInfo;
+	while (pCurrentAdapterInfo != NULL)
+	{
+		//获得每个网卡的MAC地址
+		CString strTemp =_T("");
+		strTemp.Format(_T("%02X-%02X-%02X-%02X-%02X-%02X\n"), 
+			pCurrentAdapterInfo->Address[0],
+			pCurrentAdapterInfo->Address[1],
+			pCurrentAdapterInfo->Address[2],
+			pCurrentAdapterInfo->Address[3],
+			pCurrentAdapterInfo->Address[4],
+			pCurrentAdapterInfo->Address[5]);
+		strText += strTemp;
+		pCurrentAdapterInfo = pCurrentAdapterInfo->Next;
+	}
+	AfxMessageBox(strText);
+
+	delete[] pAdapterInfo;
+}
